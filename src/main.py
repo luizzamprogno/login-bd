@@ -16,6 +16,20 @@ def menu():
 
     '''))
 
+def create_table(conexao, cursor):
+
+    cursor.execute('''
+
+        CREATE TABLE IF NOT EXISTS Usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT NOT NULL,
+        senha TEXT NOT NULL
+        );
+    
+    ''')
+
+    conexao.commit()
+
 def user_decision(conexao, cursor):
 
     choices = {
@@ -33,35 +47,49 @@ def user_decision(conexao, cursor):
             conexao.close()
             break
         else:
-            print('Please, enter a valid option')
-
-def create_table(conexao, cursor):
-
-    cursor.execute('''
-
-        CREATE TABLE IF NOT EXISTS Usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL,
-        senha TEXT NOT NULL
-        );
-    
-    ''')
-
-    conexao.commit()
+            print('\nPlease, enter a valid option')
 
 def create_new_user(conexao, cursor):
 
-    nome = input('Nome para cadastro: ')
-    senha = input('Senha para cadastro: ')
+    user = input('Enter a new user name: ')
+    password = input('Chose a password: ')
+
+    db_user = check_user_existence(cursor, user)
+
+    if db_user is None:
+        cursor.execute('''
+
+            INSERT INTO Usuarios (nome, senha)
+            VALUES  (?, ?)
+
+        ''', (user, password))
+
+        print(f'\nUser {user} created')
+
+        conexao.commit()
+    else:
+        print(f'\nUsername {user} already exists')
+
+def check_user_existence(cursor, user):
 
     cursor.execute('''
+        SELECT COUNT(*)
+        from Usuarios
+    ''')
 
-        INSERT INTO Usuarios (nome, senha)
-        VALUES  (?, ?)
+    count = cursor.fetchone()[0]
 
-    ''', (nome, senha))
+    if count == 0:
+        pass
+    else:
+        cursor.execute('''
+            SELECT nome
+            FROM Usuarios
+            WHERE nome = ?
 
-    conexao.commit()
+        ''', (user,))
+
+        return cursor.fetchone()
 
 def login(conexao, cursor):
 
@@ -87,14 +115,14 @@ def login(conexao, cursor):
             return False
 
     except TypeError:
-        print('User not Found')
+        print('\nUser {user} not Found')
 
 def verify_password(given_password, db_password):
 
     if given_password == db_password:
-        print('Login succesfull')
+        print('\nLogin succesfull')
     else:
-        print('Password doesn\'t match')
+        print('\nPassword doesn\'t match')
 
 def main():
     
@@ -102,6 +130,7 @@ def main():
     cursor = define_cursor(conexao)
     create_table(conexao, cursor)
     user_decision(conexao, cursor)
+    conexao.close()
 
 if __name__ == '__main__':
     main()
