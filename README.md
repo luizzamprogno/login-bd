@@ -1,2 +1,2 @@
 # login-bd
-Sistema de Login com Interface Gráfica e Banco de Dados
+Sistema de cadastro e login em Banco de Dados
