@@ -1,4 +1,5 @@
 import sqlite3
+import bcrypt
 
 def create_connection():
     return sqlite3.connect('cadastro.db')
@@ -49,10 +50,17 @@ def user_decision(conexao, cursor):
         else:
             print('\nPlease, enter a valid option')
 
+def hash_password(user_password):
+
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(user_password.encode('utf-8'), salt)
+
 def create_new_user(conexao, cursor):
 
     user = input('Enter a new user name: ')
     password = input('Chose a password: ')
+
+    hashed_password = hash_password(password)
 
     db_user = check_user_existence(cursor, user)
 
@@ -62,7 +70,7 @@ def create_new_user(conexao, cursor):
             INSERT INTO Usuarios (nome, senha)
             VALUES  (?, ?)
 
-        ''', (user, password))
+        ''', (user, hashed_password))
 
         print(f'\nUser {user} created')
 
@@ -104,25 +112,25 @@ def login(conexao, cursor):
         
         ''', (user,))
 
-        db_password = cursor.fetchone()[0]
+        result = cursor.fetchone()[0]
 
-        if db_password is None:
-            return False
+        if result is None:
+            print(f'\nUser {user} not found')
 
-        if verify_password(password, db_password):
-            return True
+        if verify_password(password, result):
+            print(f'\nLogin succesfull')
         else:
-            return False
+            print(f'\nWrong password')
+
 
     except TypeError:
-        print('\nUser {user} not Found')
+        print(f'\nUser {user} not Found')
 
-def verify_password(given_password, db_password):
+def verify_password(given_password, hashed_password):
 
-    if given_password == db_password:
-        print('\nLogin succesfull')
-    else:
-        print('\nPassword doesn\'t match')
+    if isinstance(hashed_password, str):
+        hashed_password = hashed_password.encode('utf-8')
+    return bcrypt.checkpw(given_password.encode('utf-8'), hashed_password)
 
 def main():
     
